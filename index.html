@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MirrorWrap Editor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0b0b0f;--panel:#131318;--panel-alt:#19191f;--border:#262630;
+    --border-focus:#5f5fff;--text:#dddded;--text-dim:#6e6e88;
+    --accent:#6366f1;--accent-glow:rgba(99,102,241,0.25);
+    --success:#34d399;--success-glow:rgba(52,211,153,0.2);
+    --guide:#f59e0b;--guide-glow:rgba(245,158,11,0.25);
+    --crop-accent:#f43f5e;--crop-glow:rgba(244,63,94,0.3);
+    --checker1:#1a1a22;--checker2:#141419;
+    --radius:8px;--radius-lg:12px;
+    --font:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:grid;grid-template-columns:306px 1fr;grid-template-rows:50px 1fr;}
+  header{grid-column:1/-1;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;}
+  .logo{font-weight:700;font-size:15px;letter-spacing:-0.03em;display:flex;align-items:center;gap:8px;}
+  .logo span{color:var(--accent);}
+  aside{background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  aside::-webkit-scrollbar{width:4px;}aside::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  .sec{background:var(--panel-alt);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px;display:flex;flex-direction:column;gap:9px;}
+  .sec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
+  label.c{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-dim);font-weight:500;}
+  label.c .lr{display:flex;justify-content:space-between;align-items:center;}
+  label.c .v{font-family:var(--mono);font-size:10px;color:var(--text);background:var(--bg);padding:2px 6px;border-radius:3px;}
+  input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--bg);outline:none;cursor:pointer;}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);cursor:grab;}
+  input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);border:none;cursor:grab;}
+  input[type="number"],select{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:7px 8px;width:100%;outline:none;transition:border-color 0.15s;}
+  input[type="number"]:focus,select:focus{border-color:var(--border-focus);box-shadow:0 0 0 2px var(--accent-glow);}
+  select{cursor:pointer;}
+  .row{display:flex;gap:6px;}.row>*{flex:1;min-width:0;}
+  .row3{display:flex;gap:6px;}.row3>*:first-child{flex:1;min-width:0;}.row3>*:nth-child(2){flex:1;min-width:0;}.row3>*:last-child{width:72px;flex-shrink:0;}
+  .btn{font-family:var(--font);font-weight:600;font-size:12px;border:none;border-radius:var(--radius);padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;}
+  .btn-upload{background:linear-gradient(135deg,var(--accent),#818cf8);color:#fff;width:100%;padding:12px;font-size:13px;border-radius:var(--radius-lg);box-shadow:0 3px 16px var(--accent-glow);}
+  .btn-upload:hover{transform:translateY(-1px);box-shadow:0 5px 22px var(--accent-glow);}
+  .btn-export{background:linear-gradient(135deg,#34d399,#10b981);color:#0b0b0f;width:100%;padding:12px;font-size:13px;font-weight:700;border-radius:var(--radius-lg);box-shadow:0 3px 16px var(--success-glow);}
+  .btn-export:hover{transform:translateY(-1px);}.btn-export:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border);font-size:11px;padding:6px 10px;}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--text);}
+  .btn-sm{font-size:11px;padding:6px 12px;border-radius:6px;}
+  .btn-crop{background:rgba(244,63,94,0.1);color:var(--crop-accent);border:1px solid rgba(244,63,94,0.3);}
+  .btn-crop:hover{background:rgba(244,63,94,0.18);border-color:var(--crop-accent);}
+  .btn-crop-apply{background:var(--crop-accent);color:#fff;}
+  .btn-crop-apply:hover{filter:brightness(1.15);}
+  .presets{display:flex;flex-wrap:wrap;gap:4px;}
+  .pbtn{font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.12s;}
+  .pbtn:hover,.pbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,0.06);}
+  .mirror-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .mtoggle{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;user-select:none;}
+  .mtoggle.on{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,0.07);}
+  .mtoggle .dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.15s;flex-shrink:0;}
+  .mtoggle.on .dot{background:var(--accent);box-shadow:0 0 6px var(--accent-glow);}
+  .guide-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:11px;color:var(--text-dim);padding:6px 0;transition:color 0.15s;}
+  .guide-toggle:hover{color:var(--text);}.guide-toggle.on{color:var(--guide);}
+  .guide-toggle .eye{width:16px;height:16px;opacity:0.5;transition:opacity 0.15s;}.guide-toggle.on .eye{opacity:1;}
+  .reset-link{font-size:10px;color:var(--text-dim);cursor:pointer;border:none;background:none;text-decoration:underline;font-family:var(--font);margin-left:auto;}
+  .reset-link:hover{color:var(--accent);}
+  .hint{font-size:10px;color:var(--text-dim);font-style:italic;line-height:1.3;}
+  .depth-sub{display:flex;flex-direction:column;gap:8px;}.depth-sub.hidden{display:none;}
+
+  /* ── Align Grid ── */
+  .align-grid{display:grid;grid-template-columns:repeat(3,28px);gap:3px;justify-content:start;}
+  .align-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;position:relative;}
+  .align-btn:hover{border-color:var(--accent);background:rgba(99,102,241,0.08);}
+  .align-btn .adot{width:5px;height:5px;border-radius:50%;background:var(--text-dim);transition:background 0.12s;}
+  .align-btn:hover .adot{background:var(--accent);}
+  .align-btn.active{border-color:var(--accent);}.align-btn.active .adot{background:var(--accent);}
+
+  /* ── Viewport ── */
+  #viewport{position:relative;overflow:hidden;
+    background:linear-gradient(45deg,var(--checker1) 25%,transparent 25%),linear-gradient(-45deg,var(--checker1) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--checker1) 75%),linear-gradient(-45deg,transparent 75%,var(--checker1) 75%);
+    background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;background-color:var(--checker2);
+    display:flex;align-items:center;justify-content:center;}
+  #canvas-wrap{position:relative;display:inline-block;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 0 1px rgba(0,0,0,0.5);}
+  #canvas-wrap canvas{display:block;}
+  .edge-handle{position:absolute;z-index:20;background:transparent;}
+  .edge-handle:hover,.edge-handle.active{background:rgba(99,102,241,0.18);}
+  .eh-n{top:-7px;left:14px;right:14px;height:10px;cursor:ns-resize;border-radius:5px 5px 0 0;}
+  .eh-s{bottom:-7px;left:14px;right:14px;height:10px;cursor:ns-resize;border-radius:0 0 5px 5px;}
+  .eh-w{left:-7px;top:14px;bottom:14px;width:10px;cursor:ew-resize;border-radius:5px 0 0 5px;}
+  .eh-e{right:-7px;top:14px;bottom:14px;width:10px;cursor:ew-resize;border-radius:0 5px 5px 0;}
+  .eh-nw{top:-9px;left:-9px;width:18px;height:18px;cursor:nwse-resize;border-radius:6px;}
+  .eh-ne{top:-9px;right:-9px;width:18px;height:18px;cursor:nesw-resize;border-radius:6px;}
+  .eh-sw{bottom:-9px;left:-9px;width:18px;height:18px;cursor:nesw-resize;border-radius:6px;}
+  .eh-se{bottom:-9px;right:-9px;width:18px;height:18px;cursor:nwse-resize;border-radius:6px;}
+  #guide-box{position:absolute;z-index:15;pointer-events:none;border:1.5px dashed var(--guide);box-shadow:0 0 8px var(--guide-glow);transition:opacity 0.2s;}
+  #guide-box.hidden{opacity:0;}
+  #guide-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--guide);white-space:nowrap;background:rgba(19,19,24,0.85);padding:2px 6px;border-radius:3px;}
+  .drop-overlay{position:absolute;inset:0;background:rgba(99,102,241,0.1);border:3px dashed var(--accent);border-radius:var(--radius-lg);display:none;align-items:center;justify-content:center;z-index:50;pointer-events:none;}
+  .drop-overlay.show{display:flex;}
+  .drop-overlay span{font-size:18px;font-weight:700;color:var(--accent);background:var(--panel);padding:12px 24px;border-radius:var(--radius-lg);}
+  #empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5;}
+  #empty-state.hidden{display:none;}
+  #empty-state svg{opacity:0.25;}
+  #empty-state p{color:var(--text-dim);font-size:13px;}
+  .info-bar{position:absolute;bottom:10px;left:10px;display:flex;gap:10px;font-family:var(--mono);font-size:10px;color:var(--text-dim);background:rgba(19,19,24,0.88);backdrop-filter:blur(6px);padding:5px 12px;border-radius:7px;border:1px solid var(--border);z-index:30;}
+  #file-input{display:none;}
+
+  /* ── Crop Overlay ── */
+  #crop-overlay{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,11,15,0.92);}
+  #crop-overlay.active{display:flex;}
+  #crop-container{position:relative;display:inline-block;cursor:crosshair;}
+  #crop-container img{display:block;max-width:calc(100% - 80px);max-height:calc(100vh - 160px);user-select:none;-webkit-user-drag:none;}
+  #crop-rect{position:absolute;border:2px solid var(--crop-accent);box-shadow:0 0 0 9999px rgba(0,0,0,0.55);cursor:move;z-index:2;}
+  .crop-handle{position:absolute;width:14px;height:14px;background:var(--crop-accent);border:2px solid #fff;border-radius:3px;z-index:3;}
+  .ch-nw{top:-7px;left:-7px;cursor:nwse-resize;}.ch-ne{top:-7px;right:-7px;cursor:nesw-resize;}
+  .ch-sw{bottom:-7px;left:-7px;cursor:nesw-resize;}.ch-se{bottom:-7px;right:-7px;cursor:nwse-resize;}
+  .ch-n{top:-7px;left:50%;margin-left:-7px;cursor:ns-resize;}.ch-s{bottom:-7px;left:50%;margin-left:-7px;cursor:ns-resize;}
+  .ch-w{top:50%;margin-top:-7px;left:-7px;cursor:ew-resize;}.ch-e{top:50%;margin-top:-7px;right:-7px;cursor:ew-resize;}
+  #crop-info{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:12px;}
+  #crop-actions{display:flex;gap:10px;margin-top:14px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1" opacity=".5"/><rect x="3" y="13" width="8" height="8" rx="1" opacity=".5"/><rect x="13" y="13" width="8" height="8" rx="1" opacity=".25"/></svg>
+    Mirror<span>Wrap</span>
+  </div>
+  <button class="btn btn-ghost" onclick="resetAll()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    Reset
+  </button>
+</header>
+
+<aside id="sidebar">
+  <input type="file" id="file-input" accept="image/*">
+  <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Upload Image
+  </button>
+
+  <!-- Canvas Size -->
+  <div class="sec">
+    <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Canvas Size</div>
+    <div class="row3">
+      <label class="c">W<input type="number" id="inp-cw" value="1920" min="0.1" step="any"></label>
+      <label class="c">H<input type="number" id="inp-ch" value="1080" min="0.1" step="any"></label>
+      <label class="c">Unit<select id="sel-unit"><option value="px">px</option><option value="in">in</option><option value="cm">cm</option></select></label>
+    </div>
+    <label class="c"><div class="lr">DPI <span class="v" id="v-dpi">300</span></div><input type="number" id="inp-dpi" value="300" min="1" max="2400" step="1"></label>
+    <div class="presets" id="presets"></div>
+    <p class="hint">Drag canvas edges to resize interactively.</p>
+  </div>
+
+  <!-- Image Fit -->
+  <div class="sec">
+    <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>Image Fit<button class="reset-link" onclick="resetFit()">reset</button></div>
+    <div class="row">
+      <button class="btn btn-sm btn-crop" onclick="enterCropMode()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v4H2"/><path d="M18 22v-4h4"/><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        Crop
+      </button>
+      <button class="btn btn-sm btn-ghost" id="btn-reset-crop" onclick="resetCrop()" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Reset Crop
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:10px;color:var(--text-dim);font-weight:500;">Align</span>
+      <div class="align-grid" id="align-grid"></div>
+    </div>
+    <label class="c"><div class="lr">Scale <span class="v" id="v-scale">100%</span></div><input type="range" id="r-scale" min="10" max="500" value="100" step="1"></label>
+    <p class="hint">Drag on image to reposition within canvas.</p>
+  </div>
+
+  <!-- Mirror Fill -->
+  <div class="sec">
+    <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><polyline points="8 7 4 3 8 3"/><polyline points="16 7 20 3 16 3"/></svg>Mirror Fill</div>
+    <div class="mirror-grid">
+      <button class="mtoggle on" data-side="top" onclick="toggleMirror(this)"><span class="dot"></span>Top</button>
+      <button class="mtoggle on" data-side="bottom" onclick="toggleMirror(this)"><span class="dot"></span>Bottom</button>
+      <button class="mtoggle on" data-side="left" onclick="toggleMirror(this)"><span class="dot"></span>Left</button>
+      <button class="mtoggle on" data-side="right" onclick="toggleMirror(this)"><span class="dot"></span>Right</button>
+    </div>
+    <div class="guide-toggle on" id="guide-toggle" onclick="toggleGuide()">
+      <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Show image boundary
+    </div>
+    <label class="c">Depth Mode<select id="sel-depth"><option value="infinite">Infinite (fill canvas)</option><option value="fixed" selected>Fixed</option><option value="proportional">Proportional (%)</option></select></label>
+    <div class="depth-sub" id="depth-fixed-ctrl"><label class="c"><div class="lr">Depth <span class="v" id="v-depth-fixed">3.00 in</span></div><input type="range" id="r-depth-fixed" min="1" max="3000" value="900" step="1"></label></div>
+    <div class="depth-sub hidden" id="depth-prop-ctrl"><label class="c"><div class="lr">Depth <span class="v" id="v-depth-prop">40%</span></div><input type="range" id="r-depth-prop" min="1" max="200" value="40" step="1"></label></div>
+    <label class="c"><div class="lr">Edge Fade<span style="display:flex;gap:4px;align-items:center;"><button class="pbtn" id="fade-hard" style="padding:2px 7px;font-size:9px;" onclick="setFadeMode('hard')">Hard</button><button class="pbtn active" id="fade-soft" style="padding:2px 7px;font-size:9px;" onclick="setFadeMode('soft')">Soft</button><span class="v" id="v-fade">10%</span></span></div><input type="range" id="r-fade" min="0" max="100" value="10" step="1"></label>
+  </div>
+
+  <!-- Transform -->
+  <div class="sec">
+    <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><path d="M21 3l-7 7"/></svg>Transform<button class="reset-link" onclick="resetTransform()">reset</button></div>
+    <label class="c"><div class="lr">Rotation <span class="v" id="v-rot">0°</span></div><input type="range" id="r-rot" min="-180" max="180" value="0" step="1"></label>
+    <label class="c"><div class="lr">Brightness <span class="v" id="v-bri">0</span></div><input type="range" id="r-bri" min="-100" max="100" value="0" step="1"></label>
+    <label class="c"><div class="lr">Contrast <span class="v" id="v-con">0</span></div><input type="range" id="r-con" min="-100" max="100" value="0" step="1"></label>
+  </div>
+
+  <!-- Export -->
+  <div class="sec">
+    <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</div>
+    <label class="c">Format<select id="sel-fmt"><option value="png">PNG (lossless)</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></label>
+    <label class="c" id="lbl-q"><div class="lr">Quality <span class="v" id="v-q">92%</span></div><input type="range" id="r-q" min="10" max="100" value="92" step="1"></label>
+    <label class="c"><div class="lr">Resolution <span class="v" id="v-res">100%</span></div><input type="range" id="r-res" min="10" max="300" value="100" step="5"></label>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Export: <span id="exp-dims">1920 × 1080 px</span></div>
+    <button class="btn btn-export" id="btn-exp" disabled onclick="doExport()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Save Image
+    </button>
+  </div>
+</aside>
+
+<div id="viewport">
+  <div id="empty-state">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <p>Upload an image or drag & drop to start</p>
+  </div>
+  <div id="canvas-wrap">
+    <div class="edge-handle eh-n" data-edge="n"></div>
+    <div class="edge-handle eh-s" data-edge="s"></div>
+    <div class="edge-handle eh-w" data-edge="w"></div>
+    <div class="edge-handle eh-e" data-edge="e"></div>
+    <div class="edge-handle eh-nw" data-edge="nw"></div>
+    <div class="edge-handle eh-ne" data-edge="ne"></div>
+    <div class="edge-handle eh-sw" data-edge="sw"></div>
+    <div class="edge-handle eh-se" data-edge="se"></div>
+    <div id="guide-box" class="hidden"><div id="guide-label"></div></div>
+  </div>
+  <div class="drop-overlay" id="drop-overlay"><span>Drop image here</span></div>
+  <div class="info-bar" id="info-bar" style="display:none;">
+    <span>Orig: <span id="i-orig">—</span></span>
+    <span>│ Canvas: <span id="i-cvs">—</span></span>
+    <span>│ Pos: <span id="i-pos">0,0</span></span>
+  </div>
+
+  <!-- Crop Overlay -->
+  <div id="crop-overlay">
+    <div id="crop-container">
+      <img id="crop-img" src="">
+      <div id="crop-rect">
+        <div class="crop-handle ch-nw" data-h="nw"></div>
+        <div class="crop-handle ch-ne" data-h="ne"></div>
+        <div class="crop-handle ch-sw" data-h="sw"></div>
+        <div class="crop-handle ch-se" data-h="se"></div>
+        <div class="crop-handle ch-n" data-h="n"></div>
+        <div class="crop-handle ch-s" data-h="s"></div>
+        <div class="crop-handle ch-w" data-h="w"></div>
+        <div class="crop-handle ch-e" data-h="e"></div>
+      </div>
+    </div>
+    <div id="crop-info">Select crop region</div>
+    <div id="crop-actions">
+      <button class="btn btn-sm btn-crop-apply" onclick="applyCrop()">Apply Crop</button>
+      <button class="btn btn-sm btn-ghost" onclick="exitCropMode()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+//  STATE
+// ═══════════════════════════════════
+const S={
+  origImg:null, // always keep original for reset crop
+  img:null, iw:0, ih:0,
+  cw:1920, ch:1080, unit:'px', dpi:300,
+  scale:100, offX:0, offY:0, alignX:0, alignY:0,
+  rot:0, bri:0, con:0,
+  mirrorL:true,mirrorR:true,mirrorT:true,mirrorB:true,
+  showGuide:true,
+  depthMode:'fixed', depthFixedPx:900, depthProp:40,
+  fadeMode:'soft', fadePct:10,
+  expRes:100, expFmt:'png', expQ:92,
+  cropped:false,
+  cropX:0,cropY:0,cropW:0,cropH:0, // in original image px
+};
+
+function EL(id){return document.getElementById(id);}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+// ═══════════════════════════════════
+//  UNITS
+// ═══════════════════════════════════
+function px2unit(px){if(S.unit==='in')return px/S.dpi;if(S.unit==='cm')return px/S.dpi*2.54;return px;}
+function unit2px(v){if(S.unit==='in')return v*S.dpi;if(S.unit==='cm')return v/2.54*S.dpi;return v;}
+function fmtUnit(px){const v=px2unit(px);return S.unit==='px'?Math.round(v)+'':v.toFixed(2);}
+function syncCanvasInputs(){EL('inp-cw').value=fmtUnit(S.cw);EL('inp-ch').value=fmtUnit(S.ch);EL('inp-cw').step=S.unit==='px'?'1':'0.01';EL('inp-ch').step=S.unit==='px'?'1':'0.01';}
+function syncDepthLabel(){const v=px2unit(S.depthFixedPx);EL('v-depth-fixed').textContent=(S.unit==='px'?Math.round(v):v.toFixed(2))+' '+S.unit;}
+
+// ═══════════════════════════════════
+//  THREE.JS
+// ═══════════════════════════════════
+const VP=document.getElementById('viewport');
+const wrap=document.getElementById('canvas-wrap');
+let vpW,vpH;
+function measureVP(){vpW=VP.clientWidth;vpH=VP.clientHeight;}
+measureVP();
+
+const renderer=new THREE.WebGLRenderer({alpha:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);
+wrap.insertBefore(renderer.domElement,wrap.firstChild);
+renderer.domElement.style.display='none';
+
+const scene=new THREE.Scene();
+const cam=new THREE.OrthographicCamera(-0.5,0.5,0.5,-0.5,0.1,10);
+cam.position.z=1;
+
+let plane=null,mat=null,tex=null;
+
+const VS=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+const FS=`
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uImgMin,uImgMax;
+uniform float uRot,uBri,uCon;
+uniform bool uMirL,uMirR,uMirT,uMirB;
+uniform float uDepthL,uDepthR,uDepthT,uDepthB;
+uniform float uFade;
+uniform bool uSoftFade;
+varying vec2 vUv;
+vec2 mirrorSample(vec2 uv,vec2 mn,vec2 mx){
+  vec2 sz=mx-mn;vec2 loc=(uv-mn)/sz;
+  vec2 m=mod(loc,2.0);m=mix(m,2.0-m,step(1.0,m));return m;
+}
+void main(){
+  vec2 uv=vUv;vec2 mn=uImgMin,mx=uImgMax;
+  bool inX=uv.x>=mn.x&&uv.x<=mx.x;bool inY=uv.y>=mn.y&&uv.y<=mx.y;bool inImg=inX&&inY;
+  bool isL=uv.x<mn.x;bool isR=uv.x>mx.x;bool isT=uv.y>mx.y;bool isB=uv.y<mn.y;
+  bool allowed=true;
+  if(isL&&!inY)allowed=uMirL&&(isT?uMirT:uMirB);
+  else if(isR&&!inY)allowed=uMirR&&(isT?uMirT:uMirB);
+  else if(isL)allowed=uMirL;else if(isR)allowed=uMirR;
+  else if(isT)allowed=uMirT;else if(isB)allowed=uMirB;
+  if(!inImg&&!allowed){gl_FragColor=vec4(0.0);return;}
+  float alpha=1.0;
+  if(!inImg){
+    float distL=mn.x-uv.x;float distR=uv.x-mx.x;float distT=uv.y-mx.y;float distB=mn.y-uv.y;
+    if(isL&&uDepthL>=0.0){if(distL>uDepthL){gl_FragColor=vec4(0.0);return;}if(uSoftFade&&uDepthL>0.0){float fz=uDepthL*uFade;if(fz>0.0&&distL>uDepthL-fz){alpha*=1.0-(distL-(uDepthL-fz))/fz;}}}
+    if(isR&&uDepthR>=0.0){if(distR>uDepthR){gl_FragColor=vec4(0.0);return;}if(uSoftFade&&uDepthR>0.0){float fz=uDepthR*uFade;if(fz>0.0&&distR>uDepthR-fz){alpha*=1.0-(distR-(uDepthR-fz))/fz;}}}
+    if(isT&&uDepthT>=0.0){if(distT>uDepthT){gl_FragColor=vec4(0.0);return;}if(uSoftFade&&uDepthT>0.0){float fz=uDepthT*uFade;if(fz>0.0&&distT>uDepthT-fz){alpha*=1.0-(distT-(uDepthT-fz))/fz;}}}
+    if(isB&&uDepthB>=0.0){if(distB>uDepthB){gl_FragColor=vec4(0.0);return;}if(uSoftFade&&uDepthB>0.0){float fz=uDepthB*uFade;if(fz>0.0&&distB>uDepthB-fz){alpha*=1.0-(distB-(uDepthB-fz))/fz;}}}
+  }
+  vec2 imgUV=mirrorSample(uv,mn,mx);
+  if(abs(uRot)>0.001){vec2 cen=vec2(0.5);vec2 d=imgUV-cen;float c=cos(uRot),s=sin(uRot);imgUV=cen+vec2(d.x*c-d.y*s,d.x*s+d.y*c);imgUV=mod(imgUV,2.0);imgUV=mix(imgUV,2.0-imgUV,step(1.0,imgUV));}
+  vec4 col=texture2D(uTex,imgUV);
+  col.rgb+=uBri;
+  if(uCon>0.0){col.rgb=(col.rgb-0.5)*(1.0+uCon*3.0)+0.5;}else{col.rgb=mix(vec3(0.5),col.rgb,1.0+uCon);}
+  col.rgb=clamp(col.rgb,0.0,1.0);col.a*=alpha;
+  gl_FragColor=col;
+}`;
+
+// ═══════════════════════════════════
+//  IMAGE RECT + DEPTH + CONSTRAIN
+// ═══════════════════════════════════
+function getImgFitDims(){
+  const sc=S.scale/100;
+  const fitScale=Math.min(S.cw/S.iw,S.ch/S.ih);
+  return {w:S.iw*fitScale*sc, h:S.ih*fitScale*sc};
+}
+function getImageRect(){
+  const cw=S.cw,ch=S.ch;
+  const {w:imgW,h:imgH}=getImgFitDims();
+  const cx=(cw-imgW)/2+S.offX;
+  const cy=(ch-imgH)/2+S.offY;
+  return {minU:cx/cw,maxU:(cx+imgW)/cw,minV:1-(cy+imgH)/ch,maxV:1-cy/ch,imgW,imgH,cx,cy};
+}
+function getDepthUV(r){
+  if(S.depthMode==='infinite')return{l:-1,r:-1,t:-1,b:-1};
+  let dpx;
+  if(S.depthMode==='fixed')dpx=S.depthFixedPx;
+  else{dpx=Math.min(r.imgW,r.imgH)*S.depthProp/100;}
+  return{l:dpx/S.cw,r:dpx/S.cw,t:dpx/S.ch,b:dpx/S.ch};
+}
+
+function constrainOffset(){
+  // Soft constraint: at least 20% of image must overlap canvas
+  const {w:imgW,h:imgH}=getImgFitDims();
+  const overlapMin=0.2;
+  const minVisW=imgW*overlapMin, minVisH=imgH*overlapMin;
+  // Image left edge: (cw-imgW)/2+offX; right edge: that + imgW
+  // Must have right edge > 0 (by minVisW) and left edge < cw (by minVisW)
+  const halfGapX=(S.cw-imgW)/2;
+  const maxOffX=S.cw-minVisW+halfGapX;  // img left can go this far right before only minVisW visible
+  const minOffX=-(S.cw-minVisW+halfGapX); // symmetric
+  // Actually: img left = halfGapX + offX. We want img left < cw - minVisW AND img right > minVisW
+  // img left < cw - minVisW  =>  offX < cw - minVisW - halfGapX
+  // img right > minVisW  =>  halfGapX + offX + imgW > minVisW  =>  offX > minVisW - imgW - halfGapX
+  const maxOX=S.cw-minVisW-halfGapX;
+  const minOX=minVisW-imgW-halfGapX;
+  S.offX=clamp(S.offX,minOX,maxOX);
+
+  const halfGapY=(S.ch-imgH)/2;
+  const maxOY=S.ch-minVisH-halfGapY;
+  const minOY=minVisH-imgH-halfGapY;
+  S.offY=clamp(S.offY,minOY,maxOY);
+}
+
+// ═══════════════════════════════════
+//  BUILD / RENDER
+// ═══════════════════════════════════
+function rebuild(){
+  if(!tex)return;
+  constrainOffset();
+  if(plane){scene.remove(plane);plane.geometry.dispose();}
+  const r=getImageRect();const d=getDepthUV(r);
+  if(!mat){
+    mat=new THREE.ShaderMaterial({uniforms:{
+      uTex:{value:tex},uImgMin:{value:new THREE.Vector2()},uImgMax:{value:new THREE.Vector2()},
+      uRot:{value:0},uBri:{value:0},uCon:{value:0},
+      uMirL:{value:true},uMirR:{value:true},uMirT:{value:true},uMirB:{value:true},
+      uDepthL:{value:-1},uDepthR:{value:-1},uDepthT:{value:-1},uDepthB:{value:-1},
+      uFade:{value:0.1},uSoftFade:{value:true},
+    },vertexShader:VS,fragmentShader:FS,transparent:true});
+  }
+  const u=mat.uniforms;
+  u.uTex.value=tex;u.uImgMin.value.set(r.minU,r.minV);u.uImgMax.value.set(r.maxU,r.maxV);
+  u.uRot.value=S.rot*Math.PI/180;u.uBri.value=S.bri/200;u.uCon.value=S.con/100;
+  u.uMirL.value=S.mirrorL;u.uMirR.value=S.mirrorR;u.uMirT.value=S.mirrorT;u.uMirB.value=S.mirrorB;
+  u.uDepthL.value=d.l;u.uDepthR.value=d.r;u.uDepthT.value=d.t;u.uDepthB.value=d.b;
+  u.uFade.value=S.fadePct/100;u.uSoftFade.value=S.fadeMode==='soft';
+  plane=new THREE.Mesh(new THREE.PlaneGeometry(1,1),mat);scene.add(plane);
+  renderPreview();updateGuide();
+}
+
+function renderPreview(){
+  if(!plane)return;measureVP();
+  const asp=S.cw/S.ch,vAsp=vpW/vpH;let dw,dh;
+  if(asp>vAsp){dw=vpW*0.88;dh=dw/asp;}else{dh=vpH*0.88;dw=dh*asp;}
+  dw=Math.round(dw);dh=Math.round(dh);
+  renderer.setSize(dw,dh);renderer.render(scene,cam);
+  wrap.style.width=dw+'px';wrap.style.height=dh+'px';
+}
+
+function updateGuide(){
+  const gb=EL('guide-box');
+  if(!S.showGuide||!tex){gb.classList.add('hidden');return;}
+  gb.classList.remove('hidden');
+  const r=getImageRect();const rect=renderer.domElement.getBoundingClientRect();
+  const dw=rect.width,dh=rect.height;
+  const left=r.minU*dw,right=r.maxU*dw,top=(1-r.maxV)*dh,bottom=(1-r.minV)*dh;
+  gb.style.left=Math.round(left)+'px';gb.style.top=Math.round(top)+'px';
+  gb.style.width=Math.round(right-left)+'px';gb.style.height=Math.round(bottom-top)+'px';
+  EL('guide-label').textContent=S.iw+'×'+S.ih+'px';
+}
+
+// ═══════════════════════════════════
+//  IMAGE LOADING
+// ═══════════════════════════════════
+function applyImageToScene(img){
+  S.img=img;S.iw=img.naturalWidth||img.width;S.ih=img.naturalHeight||img.height;
+  if(tex)tex.dispose();
+  tex=new THREE.Texture(img);tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;tex.needsUpdate=true;
+  EL('i-orig').textContent=S.iw+'×'+S.ih;
+}
+function loadImage(file){
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const img=new Image();
+    img.onload=()=>{
+      S.origImg=img;S.cropped=false;
+      EL('btn-reset-crop').style.display='none';
+      applyImageToScene(img);
+      S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;
+      syncCanvasInputs();clearPreset();
+      EL('empty-state').classList.add('hidden');
+      renderer.domElement.style.display='block';
+      EL('info-bar').style.display='flex';
+      EL('btn-exp').disabled=false;
+      S.depthFixedPx=3*S.dpi;EL('r-depth-fixed').value=S.depthFixedPx;
+      EL('r-depth-fixed').max=Math.max(3000,S.depthFixedPx*2);syncDepthLabel();
+      resetFit();resetTransform();rebuild();updInfo();updExpDims();
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+EL('file-input').addEventListener('change',e=>{if(e.target.files[0])loadImage(e.target.files[0]);});
+VP.addEventListener('dragover',e=>{e.preventDefault();EL('drop-overlay').classList.add('show');});
+VP.addEventListener('dragleave',()=>EL('drop-overlay').classList.remove('show'));
+VP.addEventListener('drop',e=>{e.preventDefault();EL('drop-overlay').classList.remove('show');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImage(f);});
+
+// ═══════════════════════════════════
+//  CROP MODE
+// ═══════════════════════════════════
+let cropActive=false;
+let cropDrag=null,cDragSX,cDragSY,cRectStart={};
+// crop rect in fraction of displayed image (0..1)
+let cFrac={x:0.1,y:0.1,w:0.8,h:0.8};
+
+function enterCropMode(){
+  if(!S.origImg)return;
+  cropActive=true;
+  const co=EL('crop-overlay');co.classList.add('active');
+  const cimg=EL('crop-img');
+  cimg.src=S.origImg.src;
+  cFrac={x:0.05,y:0.05,w:0.9,h:0.9};
+  // Wait for image to load in overlay
+  cimg.onload=()=>{ updateCropRect(); };
+  if(cimg.complete) updateCropRect();
+}
+function exitCropMode(){
+  cropActive=false;EL('crop-overlay').classList.remove('active');
+}
+function updateCropRect(){
+  const cimg=EL('crop-img');
+  const iw=cimg.clientWidth,ih=cimg.clientHeight;
+  const cr=EL('crop-rect');
+  cr.style.left=Math.round(cFrac.x*iw)+'px';
+  cr.style.top=Math.round(cFrac.y*ih)+'px';
+  cr.style.width=Math.round(cFrac.w*iw)+'px';
+  cr.style.height=Math.round(cFrac.h*ih)+'px';
+  // Info
+  const ow=S.origImg.naturalWidth,oh=S.origImg.naturalHeight;
+  const px=Math.round(cFrac.x*ow),py=Math.round(cFrac.y*oh);
+  const pw=Math.round(cFrac.w*ow),ph=Math.round(cFrac.h*oh);
+  EL('crop-info').textContent=`Crop: ${pw} × ${ph} px  (from ${ow}×${oh})`;
+}
+function applyCrop(){
+  const ow=S.origImg.naturalWidth,oh=S.origImg.naturalHeight;
+  const sx=Math.round(cFrac.x*ow),sy=Math.round(cFrac.y*oh);
+  const sw=Math.round(cFrac.w*ow),sh=Math.round(cFrac.h*oh);
+  if(sw<2||sh<2)return;
+  // Draw cropped image to offscreen canvas
+  const c=document.createElement('canvas');c.width=sw;c.height=sh;
+  const ctx=c.getContext('2d');
+  ctx.drawImage(S.origImg,sx,sy,sw,sh,0,0,sw,sh);
+  const croppedImg=new Image();
+  croppedImg.onload=()=>{
+    S.cropped=true;S.cropX=sx;S.cropY=sy;S.cropW=sw;S.cropH=sh;
+    applyImageToScene(croppedImg);
+    S.cw=sw;S.ch=sh;S.offX=0;S.offY=0;
+    syncCanvasInputs();clearPreset();
+    EL('btn-reset-crop').style.display='';
+    exitCropMode();rebuild();updInfo();updExpDims();
+  };
+  croppedImg.src=c.toDataURL();
+}
+function resetCrop(){
+  if(!S.origImg)return;
+  S.cropped=false;
+  applyImageToScene(S.origImg);
+  S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;
+  syncCanvasInputs();clearPreset();
+  EL('btn-reset-crop').style.display='none';
+  rebuild();updInfo();updExpDims();
+}
+
+// Crop drag logic
+const cropContainer=EL('crop-container');
+const cropRect=EL('crop-rect');
+
+function getCropImgSize(){const ci=EL('crop-img');return{w:ci.clientWidth,h:ci.clientHeight};}
+
+cropRect.addEventListener('mousedown',e=>{
+  if(e.target.classList.contains('crop-handle')){
+    cropDrag={type:'handle',handle:e.target.dataset.h};
+  } else {
+    cropDrag={type:'move'};
+  }
+  cDragSX=e.clientX;cDragSY=e.clientY;
+  cRectStart={...cFrac};
+  e.preventDefault();e.stopPropagation();
+});
+
+// Draw new rect by dragging on empty area
+cropContainer.addEventListener('mousedown',e=>{
+  if(e.target===EL('crop-img')){
+    const ci=EL('crop-img');const r=ci.getBoundingClientRect();
+    const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+    cFrac={x:fx,y:fy,w:0,h:0};
+    cropDrag={type:'handle',handle:'se'};
+    cDragSX=e.clientX;cDragSY=e.clientY;
+    cRectStart={...cFrac};
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('mousemove',e=>{
+  if(!cropDrag)return;
+  const {w:iw,h:ih}=getCropImgSize();
+  const dx=(e.clientX-cDragSX)/iw, dy=(e.clientY-cDragSY)/ih;
+  if(cropDrag.type==='move'){
+    cFrac.x=clamp(cRectStart.x+dx,0,1-cFrac.w);
+    cFrac.y=clamp(cRectStart.y+dy,0,1-cFrac.h);
+  } else {
+    const h=cropDrag.handle;
+    let {x,y,w,h:hh}=cRectStart;
+    const r=x+w,b=y+hh;
+    if(h.includes('e')){let nr=clamp(r+dx,x+0.01,1);cFrac.w=nr-cFrac.x;if(!h.includes('n')&&!h.includes('s')){cFrac.x=x;cFrac.y=y;cFrac.h=hh;}}
+    if(h.includes('w')){let nx=clamp(x+dx,0,r-0.01);cFrac.x=nx;cFrac.w=r-nx;}
+    if(h.includes('s')){let nb=clamp(b+dy,y+0.01,1);cFrac.h=nb-cFrac.y;if(!h.includes('e')&&!h.includes('w')){cFrac.x=x;cFrac.y=y;cFrac.w=w;}}
+    if(h.includes('n')){let ny=clamp(y+dy,0,b-0.01);cFrac.y=ny;cFrac.h=b-ny;}
+    // For single axis handles that don't set other dims
+    if(h==='n'||h==='s'){cFrac.x=x;cFrac.w=w;}
+    if(h==='e'||h==='w'){cFrac.y=y;cFrac.h=hh;}
+  }
+  updateCropRect();
+});
+window.addEventListener('mouseup',()=>{cropDrag=null;});
+
+// ═══════════════════════════════════
+//  ALIGNMENT
+// ═══════════════════════════════════
+const ALIGNS=[
+  {ax:-1,ay:-1,label:'↖'},{ax:0,ay:-1,label:'↑'},{ax:1,ay:-1,label:'↗'},
+  {ax:-1,ay:0,label:'←'},{ax:0,ay:0,label:'•'},{ax:1,ay:0,label:'→'},
+  {ax:-1,ay:1,label:'↙'},{ax:0,ay:1,label:'↓'},{ax:1,ay:1,label:'↘'},
+];
+{
+  const g=EL('align-grid');
+  ALIGNS.forEach(({ax,ay,label})=>{
+    const b=document.createElement('button');
+    b.className='align-btn'+(ax===0&&ay===0?' active':'');
+    b.innerHTML='<span class="adot"></span>';
+    b.title=label;
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.align-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      applyAlignment(ax,ay);
+    });
+    g.appendChild(b);
+  });
+}
+function applyAlignment(ax,ay){
+  const {w:imgW,h:imgH}=getImgFitDims();
+  // ax: -1=left, 0=center, 1=right
+  if(ax===0)S.offX=0;
+  else if(ax===-1)S.offX=-(S.cw-imgW)/2;
+  else S.offX=(S.cw-imgW)/2;
+  if(ay===0)S.offY=0;
+  else if(ay===-1)S.offY=-(S.ch-imgH)/2;
+  else S.offY=(S.ch-imgH)/2;
+  rebuild();updInfo();
+}
+
+// ═══════════════════════════════════
+//  CONTROLS
+// ═══════════════════════════════════
+EL('inp-cw').addEventListener('input',e=>{const v=parseFloat(e.target.value)||1;S.cw=clamp(Math.round(unit2px(v)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
+EL('inp-ch').addEventListener('input',e=>{const v=parseFloat(e.target.value)||1;S.ch=clamp(Math.round(unit2px(v)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
+EL('sel-unit').addEventListener('change',e=>{S.unit=e.target.value;syncCanvasInputs();syncDepthLabel();updExpDims();});
+EL('inp-dpi').addEventListener('input',e=>{S.dpi=clamp(parseInt(e.target.value)||72,1,2400);EL('v-dpi').textContent=S.dpi;syncCanvasInputs();syncDepthLabel();updExpDims();});
+
+const PRESETS=[['16:9',1920,1080],['1:1',1080,1080],['4:3',1440,1080],['9:16',1080,1920],['21:9',2560,1080],['4:5',1080,1350],['3:2',1620,1080]];
+{const c=EL('presets');PRESETS.forEach(([l,w,h])=>{const b=document.createElement('button');b.className='pbtn';b.textContent=l;b.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');S.cw=w;S.ch=h;syncCanvasInputs();rebuild();updInfo();updExpDims();});c.appendChild(b);});}
+function clearPreset(){document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('active'));}
+
+EL('r-scale').addEventListener('input',e=>{S.scale=+e.target.value;EL('v-scale').textContent=S.scale+'%';rebuild();});
+EL('r-rot').addEventListener('input',e=>{S.rot=+e.target.value;EL('v-rot').textContent=S.rot+'°';rebuild();});
+EL('r-bri').addEventListener('input',e=>{S.bri=+e.target.value;EL('v-bri').textContent=S.bri;if(mat){mat.uniforms.uBri.value=S.bri/200;renderPreview();}});
+EL('r-con').addEventListener('input',e=>{S.con=+e.target.value;EL('v-con').textContent=S.con;if(mat){mat.uniforms.uCon.value=S.con/100;renderPreview();}});
+EL('sel-fmt').addEventListener('change',e=>{S.expFmt=e.target.value;EL('lbl-q').style.display=S.expFmt==='png'?'none':'flex';});
+EL('lbl-q').style.display='none';
+EL('r-q').addEventListener('input',e=>{S.expQ=+e.target.value;EL('v-q').textContent=S.expQ+'%';});
+EL('r-res').addEventListener('input',e=>{S.expRes=+e.target.value;EL('v-res').textContent=S.expRes+'%';updExpDims();});
+
+function toggleMirror(btn){const map={top:'mirrorT',bottom:'mirrorB',left:'mirrorL',right:'mirrorR'};S[map[btn.dataset.side]]=!S[map[btn.dataset.side]];btn.classList.toggle('on');rebuild();}
+function toggleGuide(){S.showGuide=!S.showGuide;EL('guide-toggle').classList.toggle('on',S.showGuide);updateGuide();}
+
+EL('sel-depth').addEventListener('change',e=>{S.depthMode=e.target.value;EL('depth-fixed-ctrl').classList.toggle('hidden',S.depthMode!=='fixed');EL('depth-prop-ctrl').classList.toggle('hidden',S.depthMode!=='proportional');rebuild();});
+EL('r-depth-fixed').addEventListener('input',e=>{S.depthFixedPx=+e.target.value;syncDepthLabel();rebuild();});
+EL('r-depth-prop').addEventListener('input',e=>{S.depthProp=+e.target.value;EL('v-depth-prop').textContent=S.depthProp+'%';rebuild();});
+function setFadeMode(m){S.fadeMode=m;EL('fade-hard').classList.toggle('active',m==='hard');EL('fade-soft').classList.toggle('active',m==='soft');rebuild();}
+EL('r-fade').addEventListener('input',e=>{S.fadePct=+e.target.value;EL('v-fade').textContent=S.fadePct+'%';rebuild();});
+
+// ═══════════════════════════════════
+//  IMAGE DRAG (with soft constraint)
+// ═══════════════════════════════════
+let imgDrag=false,imgDX,imgDY,imgSOX,imgSOY;
+renderer.domElement.addEventListener('mousedown',e=>{
+  if(cropActive)return;
+  imgDrag=true;imgDX=e.clientX;imgDY=e.clientY;imgSOX=S.offX;imgSOY=S.offY;
+  renderer.domElement.style.cursor='grabbing';e.stopPropagation();
+});
+window.addEventListener('mousemove',e=>{
+  if(!imgDrag)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  S.offX=imgSOX+(e.clientX-imgDX)*(S.cw/rect.width);
+  S.offY=imgSOY+(e.clientY-imgDY)*(S.ch/rect.height);
+  // constrainOffset called inside rebuild
+  rebuild();updInfo();
+  // clear align highlight
+  document.querySelectorAll('.align-btn').forEach(x=>x.classList.remove('active'));
+});
+window.addEventListener('mouseup',()=>{if(imgDrag){imgDrag=false;renderer.domElement.style.cursor='grab';}});
+renderer.domElement.style.cursor='grab';
+
+// ═══════════════════════════════════
+//  EDGE DRAG
+// ═══════════════════════════════════
+let edgeDrag=null,edgeSX,edgeSY,edgeCW0,edgeCH0;
+document.querySelectorAll('.edge-handle').forEach(h=>{
+  h.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();edgeDrag=h.dataset.edge;h.classList.add('active');edgeSX=e.clientX;edgeSY=e.clientY;edgeCW0=S.cw;edgeCH0=S.ch;});
+});
+window.addEventListener('mousemove',e=>{
+  if(!edgeDrag)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  const sx=S.cw/rect.width,sy=S.ch/rect.height;
+  const dx=(e.clientX-edgeSX)*sx,dy=(e.clientY-edgeSY)*sy;
+  let nw=edgeCW0,nh=edgeCH0;
+  if(edgeDrag.includes('e'))nw=edgeCW0+dx;if(edgeDrag.includes('w'))nw=edgeCW0-dx;
+  if(edgeDrag.includes('s'))nh=edgeCH0+dy;if(edgeDrag.includes('n'))nh=edgeCH0-dy;
+  S.cw=clamp(Math.round(nw),64,8192);S.ch=clamp(Math.round(nh),64,8192);
+  syncCanvasInputs();clearPreset();rebuild();updInfo();updExpDims();
+});
+window.addEventListener('mouseup',()=>{if(edgeDrag){document.querySelectorAll('.edge-handle').forEach(h=>h.classList.remove('active'));edgeDrag=null;}});
+
+// ═══════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════
+function updInfo(){EL('i-cvs').textContent=S.cw+'×'+S.ch;EL('i-pos').textContent=Math.round(S.offX)+', '+Math.round(S.offY);}
+function updExpDims(){const w=Math.round(S.cw*S.expRes/100),h=Math.round(S.ch*S.expRes/100);EL('exp-dims').textContent=w+' × '+h+' px';}
+function resetFit(){S.scale=100;S.offX=0;S.offY=0;EL('r-scale').value=100;EL('v-scale').textContent='100%';document.querySelectorAll('.align-btn').forEach((b,i)=>b.classList.toggle('active',i===4));rebuild();updInfo();}
+function resetTransform(){S.rot=0;S.bri=0;S.con=0;EL('r-rot').value=0;EL('v-rot').textContent='0°';EL('r-bri').value=0;EL('v-bri').textContent='0';EL('r-con').value=0;EL('v-con').textContent='0';rebuild();}
+function resetAll(){
+  if(tex)tex.dispose();if(plane){scene.remove(plane);plane.geometry.dispose();plane=null;}
+  mat=null;tex=null;S.origImg=null;S.img=null;S.cropped=false;
+  S.cw=1920;S.ch=1080;S.unit='px';S.dpi=300;
+  EL('sel-unit').value='px';EL('inp-dpi').value=300;EL('v-dpi').textContent='300';
+  syncCanvasInputs();clearPreset();resetFit();resetTransform();
+  S.mirrorL=S.mirrorR=S.mirrorT=S.mirrorB=true;
+  document.querySelectorAll('.mtoggle').forEach(b=>b.classList.add('on'));
+  S.showGuide=true;EL('guide-toggle').classList.add('on');
+  S.depthMode='fixed';S.depthFixedPx=900;S.depthProp=40;
+  EL('sel-depth').value='fixed';EL('depth-fixed-ctrl').classList.remove('hidden');EL('depth-prop-ctrl').classList.add('hidden');
+  EL('r-depth-fixed').value=900;syncDepthLabel();EL('r-depth-prop').value=40;EL('v-depth-prop').textContent='40%';
+  S.fadeMode='soft';S.fadePct=10;EL('fade-hard').classList.remove('active');EL('fade-soft').classList.add('active');
+  EL('r-fade').value=10;EL('v-fade').textContent='10%';
+  S.expRes=100;S.expFmt='png';S.expQ=92;
+  EL('r-res').value=100;EL('v-res').textContent='100%';EL('r-q').value=92;EL('v-q').textContent='92%';
+  EL('sel-fmt').value='png';EL('lbl-q').style.display='none';
+  EL('empty-state').classList.remove('hidden');renderer.domElement.style.display='none';
+  EL('info-bar').style.display='none';EL('btn-exp').disabled=true;EL('guide-box').classList.add('hidden');
+  EL('btn-reset-crop').style.display='none';
+  updExpDims();
+}
+
+// ═══════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════
+function doExport(){
+  if(!tex||!plane)return;
+  const ew=Math.round(S.cw*S.expRes/100),eh=Math.round(S.ch*S.expRes/100);
+  const rt=new THREE.WebGLRenderTarget(ew,eh,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,type:THREE.UnsignedByteType});
+  renderer.setRenderTarget(rt);renderer.setSize(ew,eh);renderer.render(scene,cam);renderer.setRenderTarget(null);
+  const px=new Uint8Array(ew*eh*4);renderer.readRenderTargetPixels(rt,0,0,ew,eh,px);
+  const row=ew*4,tmp=new Uint8Array(row);
+  for(let y=0;y<eh/2;y++){const t=y*row,b=(eh-1-y)*row;tmp.set(px.subarray(t,t+row));px.copyWithin(t,b,b+row);px.set(tmp,b);}
+  const c=document.createElement('canvas');c.width=ew;c.height=eh;
+  const ctx=c.getContext('2d');const id=ctx.createImageData(ew,eh);id.data.set(px);ctx.putImageData(id,0,0);
+  let mime,ext;
+  if(S.expFmt==='jpeg'){mime='image/jpeg';ext='jpg';}else if(S.expFmt==='webp'){mime='image/webp';ext='webp';}else{mime='image/png';ext='png';}
+  c.toBlob(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mirrorwrap-'+ew+'x'+eh+'.'+ext;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);},mime,S.expFmt==='png'?undefined:S.expQ/100);
+  rt.dispose();renderPreview();
+}
+
+// ═══════════════════════════════════
+//  INIT
+// ═══════════════════════════════════
+window.addEventListener('resize',()=>{measureVP();renderPreview();updateGuide();});
+syncCanvasInputs();syncDepthLabel();updExpDims();
+</script>
+</body>
+</html>
