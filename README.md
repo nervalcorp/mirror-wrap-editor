@@ -160,3 +160,17 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## Contributing
 
 Contributions are welcome. Please open an issue first to discuss what you'd like to change.
+
+---
+
+## Changelog
+
+### v1.1.0
+- **Canvas zoom** — scroll wheel to zoom in/out, `Ctrl +`/`Ctrl -`/`Ctrl 0` keyboard shortcuts, Space+drag to pan when zoomed in, fit-to-viewport button
+- **Crop measurements** — live width/height/position labels on the crop rectangle, displayed in the active canvas unit (px, in, or cm)
+- **Editable crop dimensions** — click the width or height label on the crop rect to type an exact value; Enter to confirm, Esc to cancel
+- **Crop units match canvas units** — crop overlay respects the unit and DPI set in Canvas Size, so measurements display in inches or centimeters when configured
+- **Fixed crop edge handles** — N/S/E/W single-axis handles now correctly update dimensions (previously only corner handles worked)
+
+### v1.0.0
+- Initial release: mirror-wrap shader, per-side toggles, depth control with fade, canvas size with px/in/cm units, DPI setting, image crop tool, 9-point alignment grid, draggable canvas edges, image boundary guide, rotation/brightness/contrast, PNG/JPEG/WebP export with resolution scaling

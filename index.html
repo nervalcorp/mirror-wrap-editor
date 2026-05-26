@@ -65,8 +65,6 @@
   .reset-link:hover{color:var(--accent);}
   .hint{font-size:10px;color:var(--text-dim);font-style:italic;line-height:1.3;}
   .depth-sub{display:flex;flex-direction:column;gap:8px;}.depth-sub.hidden{display:none;}
-
-  /* ── Align Grid ── */
   .align-grid{display:grid;grid-template-columns:repeat(3,28px);gap:3px;justify-content:start;}
   .align-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;position:relative;}
   .align-btn:hover{border-color:var(--accent);background:rgba(99,102,241,0.08);}
@@ -75,11 +73,16 @@
   .align-btn.active{border-color:var(--accent);}.align-btn.active .adot{background:var(--accent);}
 
   /* ── Viewport ── */
-  #viewport{position:relative;overflow:hidden;
+  #viewport{position:relative;overflow:auto;
     background:linear-gradient(45deg,var(--checker1) 25%,transparent 25%),linear-gradient(-45deg,var(--checker1) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--checker1) 75%),linear-gradient(-45deg,transparent 75%,var(--checker1) 75%);
     background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;background-color:var(--checker2);
-    display:flex;align-items:center;justify-content:center;}
-  #canvas-wrap{position:relative;display:inline-block;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 0 1px rgba(0,0,0,0.5);}
+    scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+  }
+  #viewport::-webkit-scrollbar{width:6px;height:6px;}
+  #viewport::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  #viewport::-webkit-scrollbar-corner{background:transparent;}
+  #vp-inner{min-width:100%;min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px;}
+  #canvas-wrap{position:relative;display:inline-block;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 0 1px rgba(0,0,0,0.5);flex-shrink:0;}
   #canvas-wrap canvas{display:block;}
   .edge-handle{position:absolute;z-index:20;background:transparent;}
   .edge-handle:hover,.edge-handle.active{background:rgba(99,102,241,0.18);}
@@ -101,22 +104,45 @@
   #empty-state.hidden{display:none;}
   #empty-state svg{opacity:0.25;}
   #empty-state p{color:var(--text-dim);font-size:13px;}
-  .info-bar{position:absolute;bottom:10px;left:10px;display:flex;gap:10px;font-family:var(--mono);font-size:10px;color:var(--text-dim);background:rgba(19,19,24,0.88);backdrop-filter:blur(6px);padding:5px 12px;border-radius:7px;border:1px solid var(--border);z-index:30;}
+
+  /* ── Info bar + Zoom controls ── */
+  .info-bar{position:sticky;bottom:0;left:0;right:0;display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--text-dim);background:rgba(19,19,24,0.92);backdrop-filter:blur(6px);padding:5px 12px;border-top:1px solid var(--border);z-index:30;}
+  .zoom-controls{display:flex;align-items:center;gap:4px;margin-left:auto;}
+  .zoom-btn{width:24px;height:24px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text-dim);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;font-family:var(--mono);}
+  .zoom-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,0.06);}
+  .zoom-val{font-family:var(--mono);font-size:10px;min-width:40px;text-align:center;color:var(--text);}
+
   #file-input{display:none;}
 
   /* ── Crop Overlay ── */
   #crop-overlay{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,11,15,0.92);}
   #crop-overlay.active{display:flex;}
   #crop-container{position:relative;display:inline-block;cursor:crosshair;}
-  #crop-container img{display:block;max-width:calc(100% - 80px);max-height:calc(100vh - 160px);user-select:none;-webkit-user-drag:none;}
+  #crop-container img{display:block;max-width:calc(100% - 80px);max-height:calc(100vh - 200px);user-select:none;-webkit-user-drag:none;}
   #crop-rect{position:absolute;border:2px solid var(--crop-accent);box-shadow:0 0 0 9999px rgba(0,0,0,0.55);cursor:move;z-index:2;}
   .crop-handle{position:absolute;width:14px;height:14px;background:var(--crop-accent);border:2px solid #fff;border-radius:3px;z-index:3;}
   .ch-nw{top:-7px;left:-7px;cursor:nwse-resize;}.ch-ne{top:-7px;right:-7px;cursor:nesw-resize;}
   .ch-sw{bottom:-7px;left:-7px;cursor:nesw-resize;}.ch-se{bottom:-7px;right:-7px;cursor:nwse-resize;}
   .ch-n{top:-7px;left:50%;margin-left:-7px;cursor:ns-resize;}.ch-s{bottom:-7px;left:50%;margin-left:-7px;cursor:ns-resize;}
   .ch-w{top:50%;margin-top:-7px;left:-7px;cursor:ew-resize;}.ch-e{top:50%;margin-top:-7px;right:-7px;cursor:ew-resize;}
-  #crop-info{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:12px;}
+
+  /* Crop measurement labels */
+  .crop-meas{position:absolute;font-family:var(--mono);font-size:10px;color:#fff;background:rgba(244,63,94,0.85);padding:2px 7px;border-radius:4px;white-space:nowrap;z-index:4;cursor:pointer;user-select:none;}
+  .crop-meas:hover{background:rgba(244,63,94,1);}
+  #crop-meas-w{top:-24px;left:50%;transform:translateX(-50%);}
+  #crop-meas-h{right:-60px;top:50%;transform:translateY(-50%);}
+  #crop-meas-pos{bottom:-24px;left:0;pointer-events:none;cursor:default;}
+  .crop-meas input{font-family:var(--mono);font-size:10px;color:#fff;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.4);border-radius:3px;padding:1px 4px;width:60px;outline:none;text-align:center;}
+  .crop-meas input:focus{border-color:#fff;}
+
+  #crop-info{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:12px;display:flex;gap:16px;}
   #crop-actions{display:flex;gap:10px;margin-top:14px;}
+
+  /* Space+drag cursor */
+  .vp-panning,
+  .vp-panning *{cursor:grab !important;}
+  .vp-panning-active,
+  .vp-panning-active *{cursor:grabbing !important;}
 </style>
 </head>
 <body>
@@ -139,7 +165,6 @@
     Upload Image
   </button>
 
-  <!-- Canvas Size -->
   <div class="sec">
     <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Canvas Size</div>
     <div class="row3">
@@ -152,7 +177,6 @@
     <p class="hint">Drag canvas edges to resize interactively.</p>
   </div>
 
-  <!-- Image Fit -->
   <div class="sec">
     <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>Image Fit<button class="reset-link" onclick="resetFit()">reset</button></div>
     <div class="row">
@@ -170,10 +194,9 @@
       <div class="align-grid" id="align-grid"></div>
     </div>
     <label class="c"><div class="lr">Scale <span class="v" id="v-scale">100%</span></div><input type="range" id="r-scale" min="10" max="500" value="100" step="1"></label>
-    <p class="hint">Drag on image to reposition within canvas.</p>
+    <p class="hint">Drag on image to reposition. Scroll to zoom. Hold Space + drag to pan.</p>
   </div>
 
-  <!-- Mirror Fill -->
   <div class="sec">
     <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><polyline points="8 7 4 3 8 3"/><polyline points="16 7 20 3 16 3"/></svg>Mirror Fill</div>
     <div class="mirror-grid">
@@ -192,7 +215,6 @@
     <label class="c"><div class="lr">Edge Fade<span style="display:flex;gap:4px;align-items:center;"><button class="pbtn" id="fade-hard" style="padding:2px 7px;font-size:9px;" onclick="setFadeMode('hard')">Hard</button><button class="pbtn active" id="fade-soft" style="padding:2px 7px;font-size:9px;" onclick="setFadeMode('soft')">Soft</button><span class="v" id="v-fade">10%</span></span></div><input type="range" id="r-fade" min="0" max="100" value="10" step="1"></label>
   </div>
 
-  <!-- Transform -->
   <div class="sec">
     <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><path d="M21 3l-7 7"/></svg>Transform<button class="reset-link" onclick="resetTransform()">reset</button></div>
     <label class="c"><div class="lr">Rotation <span class="v" id="v-rot">0°</span></div><input type="range" id="r-rot" min="-180" max="180" value="0" step="1"></label>
@@ -200,7 +222,6 @@
     <label class="c"><div class="lr">Contrast <span class="v" id="v-con">0</span></div><input type="range" id="r-con" min="-100" max="100" value="0" step="1"></label>
   </div>
 
-  <!-- Export -->
   <div class="sec">
     <div class="sec-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</div>
     <label class="c">Format<select id="sel-fmt"><option value="png">PNG (lossless)</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select></label>
@@ -215,26 +236,38 @@
 </aside>
 
 <div id="viewport">
-  <div id="empty-state">
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-    <p>Upload an image or drag & drop to start</p>
-  </div>
-  <div id="canvas-wrap">
-    <div class="edge-handle eh-n" data-edge="n"></div>
-    <div class="edge-handle eh-s" data-edge="s"></div>
-    <div class="edge-handle eh-w" data-edge="w"></div>
-    <div class="edge-handle eh-e" data-edge="e"></div>
-    <div class="edge-handle eh-nw" data-edge="nw"></div>
-    <div class="edge-handle eh-ne" data-edge="ne"></div>
-    <div class="edge-handle eh-sw" data-edge="sw"></div>
-    <div class="edge-handle eh-se" data-edge="se"></div>
-    <div id="guide-box" class="hidden"><div id="guide-label"></div></div>
+  <div id="vp-inner">
+    <div id="empty-state">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p>Upload an image or drag & drop to start</p>
+    </div>
+    <div id="canvas-wrap">
+      <div class="edge-handle eh-n" data-edge="n"></div>
+      <div class="edge-handle eh-s" data-edge="s"></div>
+      <div class="edge-handle eh-w" data-edge="w"></div>
+      <div class="edge-handle eh-e" data-edge="e"></div>
+      <div class="edge-handle eh-nw" data-edge="nw"></div>
+      <div class="edge-handle eh-ne" data-edge="ne"></div>
+      <div class="edge-handle eh-sw" data-edge="sw"></div>
+      <div class="edge-handle eh-se" data-edge="se"></div>
+      <div id="guide-box" class="hidden"><div id="guide-label"></div></div>
+    </div>
   </div>
   <div class="drop-overlay" id="drop-overlay"><span>Drop image here</span></div>
+
+  <!-- Info bar with zoom controls -->
   <div class="info-bar" id="info-bar" style="display:none;">
     <span>Orig: <span id="i-orig">—</span></span>
-    <span>│ Canvas: <span id="i-cvs">—</span></span>
-    <span>│ Pos: <span id="i-pos">0,0</span></span>
+    <span>│</span>
+    <span>Canvas: <span id="i-cvs">—</span></span>
+    <span>│</span>
+    <span>Pos: <span id="i-pos">0,0</span></span>
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomBy(-0.15)" title="Zoom out (Ctrl −)">−</button>
+      <span class="zoom-val" id="zoom-val">Fit</span>
+      <button class="zoom-btn" onclick="zoomBy(0.15)" title="Zoom in (Ctrl +)">+</button>
+      <button class="zoom-btn" onclick="zoomFit()" title="Fit to viewport (Ctrl 0)" style="font-size:10px;width:32px;">Fit</button>
+    </div>
   </div>
 
   <!-- Crop Overlay -->
@@ -250,9 +283,17 @@
         <div class="crop-handle ch-s" data-h="s"></div>
         <div class="crop-handle ch-w" data-h="w"></div>
         <div class="crop-handle ch-e" data-h="e"></div>
+        <!-- Measurement labels on crop rect -->
+        <div class="crop-meas" id="crop-meas-w"></div>
+        <div class="crop-meas" id="crop-meas-h"></div>
+        <div class="crop-meas" id="crop-meas-pos"></div>
       </div>
     </div>
-    <div id="crop-info">Select crop region</div>
+    <div id="crop-info">
+      <span id="crop-info-size">Select crop region</span>
+      <span id="crop-info-offset"></span>
+      <span id="crop-info-orig"></span>
+    </div>
     <div id="crop-actions">
       <button class="btn btn-sm btn-crop-apply" onclick="applyCrop()">Apply Crop</button>
       <button class="btn btn-sm btn-ghost" onclick="exitCropMode()">Cancel</button>
@@ -265,10 +306,9 @@
 //  STATE
 // ═══════════════════════════════════
 const S={
-  origImg:null, // always keep original for reset crop
-  img:null, iw:0, ih:0,
+  origImg:null, img:null, iw:0, ih:0,
   cw:1920, ch:1080, unit:'px', dpi:300,
-  scale:100, offX:0, offY:0, alignX:0, alignY:0,
+  scale:100, offX:0, offY:0,
   rot:0, bri:0, con:0,
   mirrorL:true,mirrorR:true,mirrorT:true,mirrorB:true,
   showGuide:true,
@@ -276,7 +316,7 @@ const S={
   fadeMode:'soft', fadePct:10,
   expRes:100, expFmt:'png', expQ:92,
   cropped:false,
-  cropX:0,cropY:0,cropW:0,cropH:0, // in original image px
+  zoom:0, // 0 = fit mode; >0 = manual zoom level (1 = 100%)
 };
 
 function EL(id){return document.getElementById(id);}
@@ -295,10 +335,8 @@ function syncDepthLabel(){const v=px2unit(S.depthFixedPx);EL('v-depth-fixed').te
 //  THREE.JS
 // ═══════════════════════════════════
 const VP=document.getElementById('viewport');
+const vpInner=document.getElementById('vp-inner');
 const wrap=document.getElementById('canvas-wrap');
-let vpW,vpH;
-function measureVP(){vpW=VP.clientWidth;vpH=VP.clientHeight;}
-measureVP();
 
 const renderer=new THREE.WebGLRenderer({alpha:true,preserveDrawingBuffer:true});
 renderer.setPixelRatio(1);
@@ -364,39 +402,61 @@ function getImgFitDims(){
 function getImageRect(){
   const cw=S.cw,ch=S.ch;
   const {w:imgW,h:imgH}=getImgFitDims();
-  const cx=(cw-imgW)/2+S.offX;
-  const cy=(ch-imgH)/2+S.offY;
+  const cx=(cw-imgW)/2+S.offX, cy=(ch-imgH)/2+S.offY;
   return {minU:cx/cw,maxU:(cx+imgW)/cw,minV:1-(cy+imgH)/ch,maxV:1-cy/ch,imgW,imgH,cx,cy};
 }
 function getDepthUV(r){
   if(S.depthMode==='infinite')return{l:-1,r:-1,t:-1,b:-1};
   let dpx;
   if(S.depthMode==='fixed')dpx=S.depthFixedPx;
-  else{dpx=Math.min(r.imgW,r.imgH)*S.depthProp/100;}
+  else dpx=Math.min(r.imgW,r.imgH)*S.depthProp/100;
   return{l:dpx/S.cw,r:dpx/S.cw,t:dpx/S.ch,b:dpx/S.ch};
 }
-
 function constrainOffset(){
-  // Soft constraint: at least 20% of image must overlap canvas
   const {w:imgW,h:imgH}=getImgFitDims();
   const overlapMin=0.2;
-  const minVisW=imgW*overlapMin, minVisH=imgH*overlapMin;
-  // Image left edge: (cw-imgW)/2+offX; right edge: that + imgW
-  // Must have right edge > 0 (by minVisW) and left edge < cw (by minVisW)
-  const halfGapX=(S.cw-imgW)/2;
-  const maxOffX=S.cw-minVisW+halfGapX;  // img left can go this far right before only minVisW visible
-  const minOffX=-(S.cw-minVisW+halfGapX); // symmetric
-  // Actually: img left = halfGapX + offX. We want img left < cw - minVisW AND img right > minVisW
-  // img left < cw - minVisW  =>  offX < cw - minVisW - halfGapX
-  // img right > minVisW  =>  halfGapX + offX + imgW > minVisW  =>  offX > minVisW - imgW - halfGapX
-  const maxOX=S.cw-minVisW-halfGapX;
-  const minOX=minVisW-imgW-halfGapX;
-  S.offX=clamp(S.offX,minOX,maxOX);
+  const minVisW=imgW*overlapMin,minVisH=imgH*overlapMin;
+  const halfGapX=(S.cw-imgW)/2,halfGapY=(S.ch-imgH)/2;
+  S.offX=clamp(S.offX,minVisW-imgW-halfGapX,S.cw-minVisW-halfGapX);
+  S.offY=clamp(S.offY,minVisH-imgH-halfGapY,S.ch-minVisH-halfGapY);
+}
 
-  const halfGapY=(S.ch-imgH)/2;
-  const maxOY=S.ch-minVisH-halfGapY;
-  const minOY=minVisH-imgH-halfGapY;
-  S.offY=clamp(S.offY,minOY,maxOY);
+// ═══════════════════════════════════
+//  ZOOM
+// ═══════════════════════════════════
+function getVPSize(){return{w:VP.clientWidth,h:VP.clientHeight};}
+
+function getFitScale(){
+  const vp=getVPSize();
+  // account for padding in vp-inner
+  const pad=80;
+  const availW=vp.w-pad,availH=vp.h-pad-30; // 30 for info bar
+  const asp=S.cw/S.ch;
+  let dw,dh;
+  if(asp>availW/availH){dw=availW;dh=dw/asp;}
+  else{dh=availH;dw=dh*asp;}
+  return dw/S.cw; // scale factor: screen px per canvas px
+}
+
+function getEffectiveZoom(){
+  if(S.zoom<=0)return getFitScale();
+  return S.zoom;
+}
+
+function zoomBy(delta){
+  const cur=getEffectiveZoom();
+  const nz=clamp(cur+delta,0.05,5);
+  S.zoom=nz;
+  renderPreview();updateGuide();updateZoomLabel();
+}
+function zoomFit(){
+  S.zoom=0;
+  renderPreview();updateGuide();updateZoomLabel();
+}
+function updateZoomLabel(){
+  const z=getEffectiveZoom();
+  if(S.zoom<=0)EL('zoom-val').textContent='Fit';
+  else EL('zoom-val').textContent=Math.round(z*100)+'%';
 }
 
 // ═══════════════════════════════════
@@ -427,19 +487,22 @@ function rebuild(){
 }
 
 function renderPreview(){
-  if(!plane)return;measureVP();
-  const asp=S.cw/S.ch,vAsp=vpW/vpH;let dw,dh;
-  if(asp>vAsp){dw=vpW*0.88;dh=dw/asp;}else{dh=vpH*0.88;dw=dh*asp;}
-  dw=Math.round(dw);dh=Math.round(dh);
-  renderer.setSize(dw,dh);renderer.render(scene,cam);
-  wrap.style.width=dw+'px';wrap.style.height=dh+'px';
+  if(!plane)return;
+  const z=getEffectiveZoom();
+  const dw=Math.round(S.cw*z);
+  const dh=Math.round(S.ch*z);
+  renderer.setSize(dw,dh);
+  renderer.render(scene,cam);
+  wrap.style.width=dw+'px';
+  wrap.style.height=dh+'px';
 }
 
 function updateGuide(){
   const gb=EL('guide-box');
   if(!S.showGuide||!tex){gb.classList.add('hidden');return;}
   gb.classList.remove('hidden');
-  const r=getImageRect();const rect=renderer.domElement.getBoundingClientRect();
+  const r=getImageRect();
+  const rect=renderer.domElement.getBoundingClientRect();
   const dw=rect.width,dh=rect.height;
   const left=r.minU*dw,right=r.maxU*dw,top=(1-r.maxV)*dh,bottom=(1-r.minV)*dh;
   gb.style.left=Math.round(left)+'px';gb.style.top=Math.round(top)+'px';
@@ -464,7 +527,7 @@ function loadImage(file){
       S.origImg=img;S.cropped=false;
       EL('btn-reset-crop').style.display='none';
       applyImageToScene(img);
-      S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;
+      S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;S.zoom=0;
       syncCanvasInputs();clearPreset();
       EL('empty-state').classList.add('hidden');
       renderer.domElement.style.display='block';
@@ -472,7 +535,7 @@ function loadImage(file){
       EL('btn-exp').disabled=false;
       S.depthFixedPx=3*S.dpi;EL('r-depth-fixed').value=S.depthFixedPx;
       EL('r-depth-fixed').max=Math.max(3000,S.depthFixedPx*2);syncDepthLabel();
-      resetFit();resetTransform();rebuild();updInfo();updExpDims();
+      resetFit();resetTransform();rebuild();updInfo();updExpDims();updateZoomLabel();
     };
     img.src=e.target.result;
   };
@@ -488,23 +551,20 @@ VP.addEventListener('drop',e=>{e.preventDefault();EL('drop-overlay').classList.r
 // ═══════════════════════════════════
 let cropActive=false;
 let cropDrag=null,cDragSX,cDragSY,cRectStart={};
-// crop rect in fraction of displayed image (0..1)
 let cFrac={x:0.1,y:0.1,w:0.8,h:0.8};
 
 function enterCropMode(){
   if(!S.origImg)return;
   cropActive=true;
-  const co=EL('crop-overlay');co.classList.add('active');
+  EL('crop-overlay').classList.add('active');
   const cimg=EL('crop-img');
   cimg.src=S.origImg.src;
   cFrac={x:0.05,y:0.05,w:0.9,h:0.9};
-  // Wait for image to load in overlay
-  cimg.onload=()=>{ updateCropRect(); };
-  if(cimg.complete) updateCropRect();
+  cimg.onload=()=>{updateCropRect();};
+  if(cimg.complete)updateCropRect();
 }
-function exitCropMode(){
-  cropActive=false;EL('crop-overlay').classList.remove('active');
-}
+function exitCropMode(){cropActive=false;EL('crop-overlay').classList.remove('active');}
+
 function updateCropRect(){
   const cimg=EL('crop-img');
   const iw=cimg.clientWidth,ih=cimg.clientHeight;
@@ -513,29 +573,94 @@ function updateCropRect(){
   cr.style.top=Math.round(cFrac.y*ih)+'px';
   cr.style.width=Math.round(cFrac.w*iw)+'px';
   cr.style.height=Math.round(cFrac.h*ih)+'px';
-  // Info
+
   const ow=S.origImg.naturalWidth,oh=S.origImg.naturalHeight;
-  const px=Math.round(cFrac.x*ow),py=Math.round(cFrac.y*oh);
-  const pw=Math.round(cFrac.w*ow),ph=Math.round(cFrac.h*oh);
-  EL('crop-info').textContent=`Crop: ${pw} × ${ph} px  (from ${ow}×${oh})`;
+  const cpx=Math.round(cFrac.x*ow),cpy=Math.round(cFrac.y*oh);
+  const cpw=Math.round(cFrac.w*ow),cph=Math.round(cFrac.h*oh);
+
+  // Format in current unit
+  const u=S.unit;
+  const fW=fmtCropVal(cpw);
+  const fH=fmtCropVal(cph);
+  const fX=fmtCropVal(cpx);
+  const fY=fmtCropVal(cpy);
+  const fOW=fmtCropVal(ow);
+  const fOH=fmtCropVal(oh);
+  const uLabel=u;
+
+  // Only update text if not currently editing
+  const mw=EL('crop-meas-w'),mh=EL('crop-meas-h');
+  if(!mw.querySelector('input'))mw.textContent=fW+' '+uLabel;
+  if(!mh.querySelector('input'))mh.textContent=fH+' '+uLabel;
+  EL('crop-meas-pos').textContent='X:'+fX+'  Y:'+fY+' '+uLabel;
+
+  EL('crop-info-size').textContent='Crop: '+fW+' × '+fH+' '+uLabel;
+  EL('crop-info-offset').textContent='Offset: '+fX+', '+fY+' '+uLabel;
+  EL('crop-info-orig').textContent='Original: '+fOW+' × '+fOH+' '+uLabel;
 }
+
+function fmtCropVal(px){
+  const v=px2unit(px);
+  return S.unit==='px'?Math.round(v)+'':v.toFixed(2);
+}
+
+// Editable crop labels
+function makeCropEditable(el, axis){
+  el.addEventListener('click',e=>{
+    if(el.querySelector('input'))return; // already editing
+    e.stopPropagation();
+    const ow=S.origImg.naturalWidth,oh=S.origImg.naturalHeight;
+    const curPx=axis==='w'?Math.round(cFrac.w*ow):Math.round(cFrac.h*oh);
+    const curVal=px2unit(curPx);
+    const dispVal=S.unit==='px'?Math.round(curVal):curVal.toFixed(2);
+
+    const inp=document.createElement('input');
+    inp.type='number';inp.value=dispVal;inp.min='1';
+    inp.step=S.unit==='px'?'1':'0.01';
+    el.textContent='';el.appendChild(inp);
+    inp.focus();inp.select();
+
+    function commit(){
+      const raw=parseFloat(inp.value);
+      if(!isNaN(raw)&&raw>0){
+        const newPx=Math.round(unit2px(raw));
+        if(axis==='w'){
+          const maxW=ow-Math.round(cFrac.x*ow);
+          const clamped=clamp(newPx,2,maxW);
+          cFrac.w=clamped/ow;
+        } else {
+          const maxH=oh-Math.round(cFrac.y*oh);
+          const clamped=clamp(newPx,2,maxH);
+          cFrac.h=clamped/oh;
+        }
+      }
+      updateCropRect();
+    }
+    inp.addEventListener('blur',commit);
+    inp.addEventListener('keydown',ev=>{
+      if(ev.key==='Enter'){ev.preventDefault();inp.blur();}
+      if(ev.key==='Escape'){ev.preventDefault();updateCropRect();}
+    });
+  });
+}
+makeCropEditable(EL('crop-meas-w'),'w');
+makeCropEditable(EL('crop-meas-h'),'h');
+
 function applyCrop(){
   const ow=S.origImg.naturalWidth,oh=S.origImg.naturalHeight;
   const sx=Math.round(cFrac.x*ow),sy=Math.round(cFrac.y*oh);
   const sw=Math.round(cFrac.w*ow),sh=Math.round(cFrac.h*oh);
   if(sw<2||sh<2)return;
-  // Draw cropped image to offscreen canvas
   const c=document.createElement('canvas');c.width=sw;c.height=sh;
-  const ctx=c.getContext('2d');
-  ctx.drawImage(S.origImg,sx,sy,sw,sh,0,0,sw,sh);
+  c.getContext('2d').drawImage(S.origImg,sx,sy,sw,sh,0,0,sw,sh);
   const croppedImg=new Image();
   croppedImg.onload=()=>{
-    S.cropped=true;S.cropX=sx;S.cropY=sy;S.cropW=sw;S.cropH=sh;
+    S.cropped=true;
     applyImageToScene(croppedImg);
-    S.cw=sw;S.ch=sh;S.offX=0;S.offY=0;
+    S.cw=sw;S.ch=sh;S.offX=0;S.offY=0;S.zoom=0;
     syncCanvasInputs();clearPreset();
     EL('btn-reset-crop').style.display='';
-    exitCropMode();rebuild();updInfo();updExpDims();
+    exitCropMode();rebuild();updInfo();updExpDims();updateZoomLabel();
   };
   croppedImg.src=c.toDataURL();
 }
@@ -543,60 +668,50 @@ function resetCrop(){
   if(!S.origImg)return;
   S.cropped=false;
   applyImageToScene(S.origImg);
-  S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;
+  S.cw=S.iw;S.ch=S.ih;S.offX=0;S.offY=0;S.zoom=0;
   syncCanvasInputs();clearPreset();
   EL('btn-reset-crop').style.display='none';
-  rebuild();updInfo();updExpDims();
+  rebuild();updInfo();updExpDims();updateZoomLabel();
 }
 
 // Crop drag logic
-const cropContainer=EL('crop-container');
 const cropRect=EL('crop-rect');
-
 function getCropImgSize(){const ci=EL('crop-img');return{w:ci.clientWidth,h:ci.clientHeight};}
 
 cropRect.addEventListener('mousedown',e=>{
-  if(e.target.classList.contains('crop-handle')){
-    cropDrag={type:'handle',handle:e.target.dataset.h};
-  } else {
-    cropDrag={type:'move'};
-  }
-  cDragSX=e.clientX;cDragSY=e.clientY;
-  cRectStart={...cFrac};
+  if(e.target.classList.contains('crop-handle'))cropDrag={type:'handle',handle:e.target.dataset.h};
+  else cropDrag={type:'move'};
+  cDragSX=e.clientX;cDragSY=e.clientY;cRectStart={...cFrac};
   e.preventDefault();e.stopPropagation();
 });
-
-// Draw new rect by dragging on empty area
-cropContainer.addEventListener('mousedown',e=>{
+EL('crop-container').addEventListener('mousedown',e=>{
   if(e.target===EL('crop-img')){
     const ci=EL('crop-img');const r=ci.getBoundingClientRect();
-    const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
-    cFrac={x:fx,y:fy,w:0,h:0};
+    cFrac={x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height,w:0,h:0};
     cropDrag={type:'handle',handle:'se'};
-    cDragSX=e.clientX;cDragSY=e.clientY;
-    cRectStart={...cFrac};
+    cDragSX=e.clientX;cDragSY=e.clientY;cRectStart={...cFrac};
     e.preventDefault();
   }
 });
-
 window.addEventListener('mousemove',e=>{
   if(!cropDrag)return;
   const {w:iw,h:ih}=getCropImgSize();
-  const dx=(e.clientX-cDragSX)/iw, dy=(e.clientY-cDragSY)/ih;
+  const dx=(e.clientX-cDragSX)/iw,dy=(e.clientY-cDragSY)/ih;
   if(cropDrag.type==='move'){
-    cFrac.x=clamp(cRectStart.x+dx,0,1-cFrac.w);
-    cFrac.y=clamp(cRectStart.y+dy,0,1-cFrac.h);
+    cFrac.x=clamp(cRectStart.x+dx,0,1-cRectStart.w);
+    cFrac.y=clamp(cRectStart.y+dy,0,1-cRectStart.h);
+    cFrac.w=cRectStart.w;
+    cFrac.h=cRectStart.h;
   } else {
     const h=cropDrag.handle;
     let {x,y,w,h:hh}=cRectStart;
-    const r=x+w,b=y+hh;
-    if(h.includes('e')){let nr=clamp(r+dx,x+0.01,1);cFrac.w=nr-cFrac.x;if(!h.includes('n')&&!h.includes('s')){cFrac.x=x;cFrac.y=y;cFrac.h=hh;}}
-    if(h.includes('w')){let nx=clamp(x+dx,0,r-0.01);cFrac.x=nx;cFrac.w=r-nx;}
-    if(h.includes('s')){let nb=clamp(b+dy,y+0.01,1);cFrac.h=nb-cFrac.y;if(!h.includes('e')&&!h.includes('w')){cFrac.x=x;cFrac.y=y;cFrac.w=w;}}
-    if(h.includes('n')){let ny=clamp(y+dy,0,b-0.01);cFrac.y=ny;cFrac.h=b-ny;}
-    // For single axis handles that don't set other dims
-    if(h==='n'||h==='s'){cFrac.x=x;cFrac.w=w;}
-    if(h==='e'||h==='w'){cFrac.y=y;cFrac.h=hh;}
+    let nl=x, nt=y, nr=x+w, nb=y+hh;
+    if(h.includes('w'))nl=clamp(x+dx,0,nr-0.01);
+    if(h.includes('e'))nr=clamp(nr+dx,nl+0.01,1);
+    if(h.includes('n'))nt=clamp(y+dy,0,nb-0.01);
+    if(h.includes('s'))nb=clamp(nb+dy,nt+0.01,1);
+    cFrac.x=nl; cFrac.y=nt;
+    cFrac.w=nr-nl; cFrac.h=nb-nt;
   }
   updateCropRect();
 });
@@ -606,47 +721,36 @@ window.addEventListener('mouseup',()=>{cropDrag=null;});
 //  ALIGNMENT
 // ═══════════════════════════════════
 const ALIGNS=[
-  {ax:-1,ay:-1,label:'↖'},{ax:0,ay:-1,label:'↑'},{ax:1,ay:-1,label:'↗'},
-  {ax:-1,ay:0,label:'←'},{ax:0,ay:0,label:'•'},{ax:1,ay:0,label:'→'},
-  {ax:-1,ay:1,label:'↙'},{ax:0,ay:1,label:'↓'},{ax:1,ay:1,label:'↘'},
+  {ax:-1,ay:-1},{ax:0,ay:-1},{ax:1,ay:-1},
+  {ax:-1,ay:0},{ax:0,ay:0},{ax:1,ay:0},
+  {ax:-1,ay:1},{ax:0,ay:1},{ax:1,ay:1},
 ];
-{
-  const g=EL('align-grid');
-  ALIGNS.forEach(({ax,ay,label})=>{
-    const b=document.createElement('button');
-    b.className='align-btn'+(ax===0&&ay===0?' active':'');
-    b.innerHTML='<span class="adot"></span>';
-    b.title=label;
-    b.addEventListener('click',()=>{
-      document.querySelectorAll('.align-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      applyAlignment(ax,ay);
-    });
-    g.appendChild(b);
-  });
-}
+{const g=EL('align-grid');ALIGNS.forEach(({ax,ay},i)=>{
+  const b=document.createElement('button');
+  b.className='align-btn'+(i===4?' active':'');
+  b.innerHTML='<span class="adot"></span>';
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.align-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');applyAlignment(ax,ay);
+  });g.appendChild(b);
+});}
 function applyAlignment(ax,ay){
   const {w:imgW,h:imgH}=getImgFitDims();
-  // ax: -1=left, 0=center, 1=right
-  if(ax===0)S.offX=0;
-  else if(ax===-1)S.offX=-(S.cw-imgW)/2;
-  else S.offX=(S.cw-imgW)/2;
-  if(ay===0)S.offY=0;
-  else if(ay===-1)S.offY=-(S.ch-imgH)/2;
-  else S.offY=(S.ch-imgH)/2;
+  S.offX=ax===0?0:ax<0?-(S.cw-imgW)/2:(S.cw-imgW)/2;
+  S.offY=ay===0?0:ay<0?-(S.ch-imgH)/2:(S.ch-imgH)/2;
   rebuild();updInfo();
 }
 
 // ═══════════════════════════════════
 //  CONTROLS
 // ═══════════════════════════════════
-EL('inp-cw').addEventListener('input',e=>{const v=parseFloat(e.target.value)||1;S.cw=clamp(Math.round(unit2px(v)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
-EL('inp-ch').addEventListener('input',e=>{const v=parseFloat(e.target.value)||1;S.ch=clamp(Math.round(unit2px(v)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
+EL('inp-cw').addEventListener('input',e=>{S.cw=clamp(Math.round(unit2px(parseFloat(e.target.value)||1)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
+EL('inp-ch').addEventListener('input',e=>{S.ch=clamp(Math.round(unit2px(parseFloat(e.target.value)||1)),1,8192);clearPreset();rebuild();updInfo();updExpDims();});
 EL('sel-unit').addEventListener('change',e=>{S.unit=e.target.value;syncCanvasInputs();syncDepthLabel();updExpDims();});
 EL('inp-dpi').addEventListener('input',e=>{S.dpi=clamp(parseInt(e.target.value)||72,1,2400);EL('v-dpi').textContent=S.dpi;syncCanvasInputs();syncDepthLabel();updExpDims();});
 
 const PRESETS=[['16:9',1920,1080],['1:1',1080,1080],['4:3',1440,1080],['9:16',1080,1920],['21:9',2560,1080],['4:5',1080,1350],['3:2',1620,1080]];
-{const c=EL('presets');PRESETS.forEach(([l,w,h])=>{const b=document.createElement('button');b.className='pbtn';b.textContent=l;b.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');S.cw=w;S.ch=h;syncCanvasInputs();rebuild();updInfo();updExpDims();});c.appendChild(b);});}
+{const c=EL('presets');PRESETS.forEach(([l,w,h])=>{const b=document.createElement('button');b.className='pbtn';b.textContent=l;b.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');S.cw=w;S.ch=h;S.zoom=0;syncCanvasInputs();rebuild();updInfo();updExpDims();updateZoomLabel();});c.appendChild(b);});}
 function clearPreset(){document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('active'));}
 
 EL('r-scale').addEventListener('input',e=>{S.scale=+e.target.value;EL('v-scale').textContent=S.scale+'%';rebuild();});
@@ -660,7 +764,6 @@ EL('r-res').addEventListener('input',e=>{S.expRes=+e.target.value;EL('v-res').te
 
 function toggleMirror(btn){const map={top:'mirrorT',bottom:'mirrorB',left:'mirrorL',right:'mirrorR'};S[map[btn.dataset.side]]=!S[map[btn.dataset.side]];btn.classList.toggle('on');rebuild();}
 function toggleGuide(){S.showGuide=!S.showGuide;EL('guide-toggle').classList.toggle('on',S.showGuide);updateGuide();}
-
 EL('sel-depth').addEventListener('change',e=>{S.depthMode=e.target.value;EL('depth-fixed-ctrl').classList.toggle('hidden',S.depthMode!=='fixed');EL('depth-prop-ctrl').classList.toggle('hidden',S.depthMode!=='proportional');rebuild();});
 EL('r-depth-fixed').addEventListener('input',e=>{S.depthFixedPx=+e.target.value;syncDepthLabel();rebuild();});
 EL('r-depth-prop').addEventListener('input',e=>{S.depthProp=+e.target.value;EL('v-depth-prop').textContent=S.depthProp+'%';rebuild();});
@@ -668,11 +771,58 @@ function setFadeMode(m){S.fadeMode=m;EL('fade-hard').classList.toggle('active',m
 EL('r-fade').addEventListener('input',e=>{S.fadePct=+e.target.value;EL('v-fade').textContent=S.fadePct+'%';rebuild();});
 
 // ═══════════════════════════════════
+//  SCROLL WHEEL ZOOM
+// ═══════════════════════════════════
+VP.addEventListener('wheel',e=>{
+  if(cropActive)return;
+  e.preventDefault();
+  const delta=e.deltaY>0?-0.08:0.08;
+  zoomBy(delta);
+},{passive:false});
+
+// ═══════════════════════════════════
+//  SPACE + DRAG TO PAN VIEWPORT
+// ═══════════════════════════════════
+let spaceHeld=false,vpPan=false,vpPanSX,vpPanSY,vpScrollX0,vpScrollY0;
+
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!e.repeat&&!cropActive){
+    // Don't hijack space if typing in an input
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+    e.preventDefault();spaceHeld=true;VP.classList.add('vp-panning');
+  }
+  // Ctrl+/Ctrl- zoom
+  if((e.ctrlKey||e.metaKey)&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(0.15);}
+  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();zoomBy(-0.15);}
+  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();zoomFit();}
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='Space'){spaceHeld=false;vpPan=false;VP.classList.remove('vp-panning','vp-panning-active');}
+});
+
+VP.addEventListener('mousedown',e=>{
+  if(spaceHeld){
+    vpPan=true;vpPanSX=e.clientX;vpPanSY=e.clientY;
+    vpScrollX0=VP.scrollLeft;vpScrollY0=VP.scrollTop;
+    VP.classList.add('vp-panning-active');
+    e.preventDefault();e.stopPropagation();
+  }
+});
+window.addEventListener('mousemove',e=>{
+  if(!vpPan)return;
+  VP.scrollLeft=vpScrollX0-(e.clientX-vpPanSX);
+  VP.scrollTop=vpScrollY0-(e.clientY-vpPanSY);
+});
+window.addEventListener('mouseup',()=>{
+  if(vpPan){vpPan=false;VP.classList.remove('vp-panning-active');if(spaceHeld)VP.classList.add('vp-panning');}
+});
+
+// ═══════════════════════════════════
 //  IMAGE DRAG (with soft constraint)
 // ═══════════════════════════════════
 let imgDrag=false,imgDX,imgDY,imgSOX,imgSOY;
 renderer.domElement.addEventListener('mousedown',e=>{
-  if(cropActive)return;
+  if(cropActive||spaceHeld)return;
   imgDrag=true;imgDX=e.clientX;imgDY=e.clientY;imgSOX=S.offX;imgSOY=S.offY;
   renderer.domElement.style.cursor='grabbing';e.stopPropagation();
 });
@@ -681,9 +831,7 @@ window.addEventListener('mousemove',e=>{
   const rect=renderer.domElement.getBoundingClientRect();
   S.offX=imgSOX+(e.clientX-imgDX)*(S.cw/rect.width);
   S.offY=imgSOY+(e.clientY-imgDY)*(S.ch/rect.height);
-  // constrainOffset called inside rebuild
   rebuild();updInfo();
-  // clear align highlight
   document.querySelectorAll('.align-btn').forEach(x=>x.classList.remove('active'));
 });
 window.addEventListener('mouseup',()=>{if(imgDrag){imgDrag=false;renderer.domElement.style.cursor='grab';}});
@@ -718,7 +866,7 @@ function resetFit(){S.scale=100;S.offX=0;S.offY=0;EL('r-scale').value=100;EL('v-
 function resetTransform(){S.rot=0;S.bri=0;S.con=0;EL('r-rot').value=0;EL('v-rot').textContent='0°';EL('r-bri').value=0;EL('v-bri').textContent='0';EL('r-con').value=0;EL('v-con').textContent='0';rebuild();}
 function resetAll(){
   if(tex)tex.dispose();if(plane){scene.remove(plane);plane.geometry.dispose();plane=null;}
-  mat=null;tex=null;S.origImg=null;S.img=null;S.cropped=false;
+  mat=null;tex=null;S.origImg=null;S.img=null;S.cropped=false;S.zoom=0;
   S.cw=1920;S.ch=1080;S.unit='px';S.dpi=300;
   EL('sel-unit').value='px';EL('inp-dpi').value=300;EL('v-dpi').textContent='300';
   syncCanvasInputs();clearPreset();resetFit();resetTransform();
@@ -736,7 +884,7 @@ function resetAll(){
   EL('empty-state').classList.remove('hidden');renderer.domElement.style.display='none';
   EL('info-bar').style.display='none';EL('btn-exp').disabled=true;EL('guide-box').classList.add('hidden');
   EL('btn-reset-crop').style.display='none';
-  updExpDims();
+  updExpDims();updateZoomLabel();
 }
 
 // ═══════════════════════════════════
@@ -761,8 +909,8 @@ function doExport(){
 // ═══════════════════════════════════
 //  INIT
 // ═══════════════════════════════════
-window.addEventListener('resize',()=>{measureVP();renderPreview();updateGuide();});
-syncCanvasInputs();syncDepthLabel();updExpDims();
+window.addEventListener('resize',()=>{renderPreview();updateGuide();updateZoomLabel();});
+syncCanvasInputs();syncDepthLabel();updExpDims();updateZoomLabel();
 </script>
 </body>
 </html>
